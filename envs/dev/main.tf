@@ -81,3 +81,15 @@ module "ecr" {
 
   name = local.name
 }
+
+# ---------------- STEP 4b: IAM role for the API pods (IRSA) ----------------
+module "api_irsa" {
+  source = "../../modules/irsa"
+
+  name              = "${local.name}-api"
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+  namespace         = "app"
+  service_account   = "api"
+  secret_arns       = [module.rds.master_secret_arn]
+}

@@ -1,0 +1,15 @@
+# Non-secret settings. The DB password is NOT here: the API fetches it
+# from Secrets Manager at runtime using the role above.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+data:
+  DB_HOST: {{ .Values.data.dbHost | quote }}
+  DB_PORT: {{ .Values.data.dbPort | quote }}
+  DB_NAME: {{ .Values.data.dbName | quote }}
+  DB_SECRET_ARN: {{ .Values.data.dbSecretArn | quote }}
+  REDIS_HOST: {{ .Values.data.redisHost | quote }}
+  REDIS_PORT: {{ .Values.data.redisPort | quote }}
+  REDIS_TLS: "true"
+  AWS_REGION: {{ .Values.data.region | quote }}

@@ -1,0 +1,27 @@
+# Helm values for the NGINX Ingress Controller (F5/NGINX, OSS edition)
+# chart: oci://ghcr.io/nginx/charts/nginx-ingress
+controller:
+  kind: deployment
+  replicaCount: 2            # one per AZ is enough for dev
+
+  ingressClass:
+    name: nginx
+    create: true
+    setAsDefaultIngress: true
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  service:
+    type: LoadBalancer
+    # Ask AWS for a Network Load Balancer. It is placed in the PUBLIC subnets
+    # (found through the kubernetes.io/role/elb tags from Step 1).
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+# Controller metrics on port 9113 (scraped by Prometheus in Step 6)
+prometheus:
+  create: true

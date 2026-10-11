@@ -1,0 +1,17 @@
+# Default StorageClass for the cluster: encrypted gp3 EBS volumes,
+# created by the EBS CSI driver (ebs.csi.aws.com).
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+# Wait until a pod is scheduled, so the disk is created in the SAME AZ as the pod
+# (an EBS volume can only attach to instances in its own AZ).
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Delete

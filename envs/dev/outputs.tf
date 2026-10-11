@@ -24,3 +24,6 @@ output "kubeconfig_command" {
 # ----- Step 4a -----
 output "ecr_api_url" { value = module.ecr.repository_urls["api"] }
 output "ecr_frontend_url" { value = module.ecr.repository_urls["frontend"] }
+
+# ----- Step 4b -----
+output "api_role_arn" { value = module.api_irsa.role_arn }
