@@ -74,3 +74,10 @@ module "redis" {
 
   allowed_security_group_ids = [module.eks.cluster_security_group_id]
 }
+
+# ---------------- STEP 4a: container registry ----------------
+module "ecr" {
+  source = "../../modules/ecr"
+
+  name = local.name
+}

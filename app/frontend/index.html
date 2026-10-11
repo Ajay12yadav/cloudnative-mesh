@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CloudNative-Mesh</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0;
+           display: grid; place-items: center; min-height: 100vh; margin: 0; }
+    main { background: #1e293b; padding: 2rem 2.5rem; border-radius: 14px; width: min(92vw, 440px); }
+    h1 { margin-top: 0; font-size: 1.4rem; }
+    .count { font-size: 3rem; font-weight: 700; margin: .5rem 0; }
+    .badge { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .8rem; }
+    .cache { background: #14532d; } .database { background: #7c2d12; }
+    button { background: #6366f1; color: #fff; border: 0; padding: .7rem 1.2rem;
+             border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    button:hover { background: #4f46e5; }
+    small { color: #94a3b8; display: block; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>CloudNative-Mesh demo</h1>
+  <div>Total visits (Postgres via Redis cache)</div>
+  <div class="count" id="count">...</div>
+  <span class="badge" id="source">loading</span>
+  <p><button id="add">Record a visit</button></p>
+  <small id="msg">Frontend: NGINX &middot; API: Flask on EKS &middot; Data: RDS + ElastiCache</small>
+</main>
+<script>
+  async function load() {
+    try {
+      const r = await fetch("/api/visits");
+      const d = await r.json();
+      document.getElementById("count").textContent = d.total;
+      const s = document.getElementById("source");
+      s.textContent = "served from " + d.source;
+      s.className = "badge " + d.source;
+    } catch (e) { document.getElementById("msg").textContent = "API unreachable: " + e; }
+  }
+  document.getElementById("add").onclick = async () => {
+    await fetch("/api/visit", { method: "POST" });
+    load();
+  };
+  load();
+</script>
+</body>
+</html>

@@ -20,3 +20,7 @@ output "eks_oidc_provider_arn" { value = module.eks.oidc_provider_arn }
 output "kubeconfig_command" {
   value = "aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}"
 }
+
+# ----- Step 4a -----
+output "ecr_api_url" { value = module.ecr.repository_urls["api"] }
+output "ecr_frontend_url" { value = module.ecr.repository_urls["frontend"] }
