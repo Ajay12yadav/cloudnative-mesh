@@ -31,6 +31,7 @@ locals {
   azs          = slice(data.aws_availability_zones.available.names, 0, 2)
 }
 
+# ---------------- STEP 1: network ----------------
 module "vpc" {
   source = "../../modules/vpc"
 
@@ -39,4 +40,37 @@ module "vpc" {
   azs                = local.azs
   single_nat_gateway = true # dev: save money. Set false in prod.
   cluster_name       = local.cluster_name
+}
+
+# ---------------- STEP 3: Kubernetes ----------------
+module "eks" {
+  source = "../../modules/eks"
+
+  cluster_name                 = local.cluster_name
+  vpc_id                       = module.vpc.vpc_id
+  private_subnet_ids           = module.vpc.private_subnet_ids
+  endpoint_public_access_cidrs = var.cluster_public_access_cidrs
+}
+
+# ---------------- STEP 2: data layer ----------------
+# Step 3 upgrade: instead of trusting whole subnets (CIDRs), trust only the
+# EKS security group. Only pods/nodes in the cluster can reach the data tier.
+module "rds" {
+  source = "../../modules/rds"
+
+  name            = local.name
+  vpc_id          = module.vpc.vpc_id
+  data_subnet_ids = module.vpc.data_subnet_ids
+
+  allowed_security_group_ids = [module.eks.cluster_security_group_id]
+}
+
+module "redis" {
+  source = "../../modules/redis"
+
+  name            = local.name
+  vpc_id          = module.vpc.vpc_id
+  data_subnet_ids = module.vpc.data_subnet_ids
+
+  allowed_security_group_ids = [module.eks.cluster_security_group_id]
 }
