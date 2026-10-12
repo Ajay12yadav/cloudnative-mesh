@@ -1,5 +1,7 @@
 # Routing rules. The NGINX controller reads this and configures itself:
 #   /api/*  -> API service      /  -> frontend service
+# NOTE: the F5 NGINX Ingress Controller REJECTS rules without a host
+# ("spec.rules[0].host: Required value"), so a host is mandatory here.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,7 +9,8 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - http:
+    - host: {{ required "ingress.host is required (the NGINX controller rejects host-less rules)" .Values.ingress.host | quote }}
+      http:
         paths:
           - path: /api
             pathType: Prefix
