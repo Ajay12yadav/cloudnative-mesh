@@ -1,0 +1,14 @@
+# Tells Argo CD that ghcr.io/nginx/charts is an OCI registry holding Helm charts.
+# (No credentials: the registry is public. Safe to commit.)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: repo-nginx-oci
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: nginx-charts
+  type: helm
+  url: ghcr.io/nginx/charts
+  enableOCI: "true"

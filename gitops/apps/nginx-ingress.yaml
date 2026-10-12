@@ -1,0 +1,33 @@
+# NGINX Ingress Controller: chart from the OCI registry, values from OUR Git repo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-ingress
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io   # deleting the app also deletes the AWS load balancer
+spec:
+  project: default
+  sources:
+    - repoURL: ghcr.io/nginx/charts             # OCI registry: no "oci://" prefix in Argo CD
+      chart: nginx-ingress
+      targetRevision: 2.5.2                     # pinned chart version
+      helm:
+        valueFiles:
+          - $values/k8s/platform/nginx-ingress-values.yaml
+    - repoURL: https://github.com/Ajay12yadav/cloudnative-mesh.git
+      targetRevision: main
+      ref: values                               # makes $values point at this repo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nginx-ingress
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true                    # the chart's CRDs are too large for client-side apply
+    retry:
+      limit: 5
+      backoff: { duration: 20s, factor: 2, maxDuration: 3m }

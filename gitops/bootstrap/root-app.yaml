@@ -1,0 +1,23 @@
+# The ONE Application we apply by hand ("app of apps").
+# It watches gitops/apps/ in Git; every Application file placed there is
+# created automatically. After this, you only ever edit Git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io   # deleting root also deletes its children
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Ajay12yadav/cloudnative-mesh.git
+    targetRevision: main
+    path: gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

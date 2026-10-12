@@ -1,0 +1,29 @@
+# Our own Helm chart (frontend + API). Values come from values-dev.yaml in the same folder.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudnative-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Ajay12yadav/cloudnative-mesh.git
+    targetRevision: main
+    path: charts/cloudnative-app
+    helm:
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff: { duration: 20s, factor: 2, maxDuration: 3m }

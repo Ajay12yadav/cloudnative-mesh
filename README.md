@@ -7,8 +7,14 @@
 | 3 | modules/eks, envs/dev | done |
 | 4a | modules/ecr, app/, scripts/ | done |
 | 4b | modules/irsa, k8s/platform, charts/ | done |
+| 5 | gitops/, scripts/up.sh, down.sh, bootstrap-argocd.sh | done |
 
     cd envs/dev
     terraform init -backend-config="bucket=<your-state-bucket>"
     terraform validate && terraform plan && terraform apply
     terraform destroy   # when finished for the day
+
+## Daily workflow
+
+    bash scripts/up.sh      # rebuild everything (about 25-30 min)
+    bash scripts/down.sh    # tear everything down safely

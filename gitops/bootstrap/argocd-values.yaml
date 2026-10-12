@@ -1,0 +1,19 @@
+# Helm values for the Argo CD chart (argo/argo-cd). Kept minimal on purpose.
+configs:
+  params:
+    # Serve plain HTTP inside the cluster. We reach the UI through
+    # "kubectl port-forward"; TLS will be terminated at the ingress later.
+    server.insecure: true
+  cm:
+    # How often Argo polls Git (default 180s). Shorter = faster demos.
+    timeout.reconciliation: 60s
+
+server:
+  service:
+    type: ClusterIP        # NOT exposed to the internet
+
+# Components we do not need in this project
+dex:
+  enabled: false           # no SSO
+notifications:
+  enabled: false

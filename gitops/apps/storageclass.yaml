@@ -1,0 +1,23 @@
+# Applies ONLY k8s/platform/storageclass-gp3.yaml (the folder also holds a Helm values file).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: storageclass
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Ajay12yadav/cloudnative-mesh.git
+    targetRevision: main
+    path: k8s/platform
+    directory:
+      include: "storageclass-gp3.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
