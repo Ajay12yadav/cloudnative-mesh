@@ -29,7 +29,8 @@ git add charts/cloudnative-app/values-dev.yaml gitops
 git diff --cached --quiet || git commit -m "Rebuild: refresh values-dev.yaml"
 git push
 
-echo "=== 6/7 Install Argo CD and hand over to Git ==="
+echo "=== 6/7 Grafana admin secret, then install Argo CD and hand over to Git ==="
+bash scripts/monitoring-secrets.sh
 bash scripts/bootstrap-argocd.sh
 
 echo "=== 7/7 Wait for the load balancer and set the Ingress host ==="

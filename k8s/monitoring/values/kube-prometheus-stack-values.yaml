@@ -1,0 +1,75 @@
+# Values for the kube-prometheus-stack Helm chart
+# (Prometheus Operator + Prometheus + Alertmanager + Grafana + exporters + dashboards).
+
+# --- EKS does not expose these control-plane components to scraping ---------
+# Leaving them on would show permanently "down" targets and firing alerts.
+kubeControllerManager: { enabled: false }
+kubeScheduler:         { enabled: false }
+kubeEtcd:              { enabled: false }
+kubeProxy:             { enabled: false }
+
+defaultRules:
+  rules:
+    etcd: false
+    kubeControllerManager: false
+    kubeProxy: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+
+# --- Prometheus ---------------------------------------------------------------
+prometheus:
+  prometheusSpec:
+    retention: 3d
+    # Default is to select ONLY monitors labelled with this Helm release.
+    # "false" = select every ServiceMonitor / PodMonitor / PrometheusRule in the
+    # cluster, including the ones shipped in OUR app chart and in k8s/monitoring/extras.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    resources:
+      requests: { cpu: 200m, memory: 700Mi }
+      limits:   { memory: 1500Mi }
+    # Metrics survive pod restarts: a real EBS gp3 volume (StorageClass from Step 4b)
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: { cpu: 25m, memory: 64Mi }
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+
+# --- Grafana ----------------------------------------------------------------
+grafana:
+  # Password lives in a Secret created by scripts/monitoring-secrets.sh,
+  # never in Git. (Argo CD renders charts without cluster access, so the
+  # chart's "generate a random password" feature would change on every sync.)
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  persistence:
+    enabled: true
+    storageClassName: gp3
+    size: 2Gi
+  # A ReadWriteOnce disk can only be attached to one pod, so replace, don't roll
+  deploymentStrategy:
+    type: Recreate
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard      # any ConfigMap with this label becomes a dashboard
+      labelValue: "1"
+      searchNamespace: ALL          # look in every namespace

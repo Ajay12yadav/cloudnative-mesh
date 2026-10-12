@@ -1,0 +1,44 @@
+# Prometheus + Alertmanager + Grafana + exporters, from the community Helm repository.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 92.3.0          # set by: bash scripts/pin-monitoring.sh
+      helm:
+        releaseName: monitoring
+        valueFiles:
+          - $values/k8s/monitoring/values/kube-prometheus-stack-values.yaml
+    - repoURL: https://github.com/Ajay12yadav/cloudnative-mesh.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true          # the chart's CRDs are far too large for client-side apply
+    retry:
+      limit: 10
+      backoff: { duration: 20s, factor: 2, maxDuration: 5m }
+  # The operator patches these certificates itself after install: ignore that field
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jqPathExpressions:
+        - '.webhooks[]?.clientConfig.caBundle'
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - '.webhooks[]?.clientConfig.caBundle'

@@ -1,0 +1,35 @@
+# Alert rules for the sample API. Prometheus evaluates them; Alertmanager routes them.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnm-app-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: cnm-app
+      rules:
+        - alert: ApiHighErrorRate
+          expr: |
+            100 * sum(rate(http_requests_total{job="api",status=~"5.."}[5m]))
+              / clamp_min(sum(rate(http_requests_total{job="api"}[5m])), 1e-9) > 5
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "API error rate above 5%"
+            description: "{{ $value | printf \"%.1f\" }}% of API requests failed with 5xx over the last 5 minutes."
+        - alert: ApiHighLatencyP95
+          expr: |
+            histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job="api"}[5m]))) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "API p95 latency above 500 ms"
+        - alert: ApiTargetDown
+          expr: absent(up{job="api"} == 1)
+          for: 3m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Prometheus cannot scrape any API pod"

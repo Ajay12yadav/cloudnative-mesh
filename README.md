@@ -8,6 +8,7 @@
 | 4a | modules/ecr, app/, scripts/ | done |
 | 4b | modules/irsa, k8s/platform, charts/ | done |
 | 5 | gitops/, scripts/up.sh, down.sh, bootstrap-argocd.sh | done |
+| 6 | k8s/monitoring, gitops/apps/monitoring*.yaml | done |
 
     cd envs/dev
     terraform init -backend-config="bucket=<your-state-bucket>"

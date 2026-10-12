@@ -18,8 +18,12 @@ VPC_ID="$(cd envs/dev && terraform output -raw vpc_id)"
 echo ">> Deleting Argo CD applications (cascades to pods, services, and the AWS load balancer)"
 kubectl delete applications --all -n argocd --wait=true --timeout=600s || true
 
-echo ">> Deleting any leftover volume claims"
-kubectl delete pvc --all -A --wait=false || true
+echo ">> Deleting volume claims (Prometheus, Grafana) and waiting for the EBS volumes to be released"
+kubectl delete pvc --all -A --wait=true --timeout=300s || true
+for i in $(seq 1 30); do
+  [ -z "$(kubectl get pv -o name 2>/dev/null)" ] && break
+  echo "   waiting for persistent volumes to be deleted ($i/30)..."; sleep 10
+done
 
 echo ">> Waiting for Kubernetes-created load balancers in the VPC to disappear"
 for i in $(seq 1 30); do

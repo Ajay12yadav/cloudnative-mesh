@@ -1,0 +1,21 @@
+{{- if .Values.metrics.serviceMonitor.enabled }}
+# Tells Prometheus to scrape the API's /metrics every 15 s.
+# The CRD comes from the monitoring stack; if it does not exist yet on the first
+# sync, Argo CD retries until it does.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api
+  labels:
+    app: api
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  selector:
+    matchLabels:
+      app: api            # matches the Service "api"
+  endpoints:
+    - port: http          # the Service's port NAME
+      path: /metrics
+      interval: 15s
+{{- end }}

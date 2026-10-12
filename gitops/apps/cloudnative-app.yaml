@@ -27,5 +27,5 @@ spec:
     syncOptions:
       - CreateNamespace=true
     retry:
-      limit: 5
-      backoff: { duration: 20s, factor: 2, maxDuration: 3m }
+      limit: 20                     # the ServiceMonitor waits for the monitoring CRDs
+      backoff: { duration: 20s, factor: 2, maxDuration: 5m }
