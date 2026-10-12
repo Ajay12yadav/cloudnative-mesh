@@ -9,7 +9,7 @@ frontend:
     tag: v1
 data:
   dbHost: cnm-dev-postgres.c7ikm2c4um3q.ap-south-1.rds.amazonaws.com
-  dbSecretArn: arn:aws:secretsmanager:ap-south-1:340752802275:secret:rds!db-d31d1027-a95f-4374-89a0-89ff10058fa0-SgMcbI
+  dbSecretArn: arn:aws:secretsmanager:ap-south-1:340752802275:secret:rds!db-f54104e4-4744-439e-8bf4-fd426653773a-x0THR0
   redisHost: master.cnm-dev-redis.vxwisb.aps1.cache.amazonaws.com
 irsa:
   apiRoleArn: arn:aws:iam::340752802275:role/cnm-dev-api
