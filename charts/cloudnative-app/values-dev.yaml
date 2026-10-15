@@ -2,14 +2,12 @@
 api:
   image:
     repository: 340752802275.dkr.ecr.ap-south-1.amazonaws.com/cnm-dev/api
-    tag: v1
 frontend:
   image:
     repository: 340752802275.dkr.ecr.ap-south-1.amazonaws.com/cnm-dev/frontend
-    tag: v1
 data:
   dbHost: cnm-dev-postgres.c7ikm2c4um3q.ap-south-1.rds.amazonaws.com
-  dbSecretArn: arn:aws:secretsmanager:ap-south-1:340752802275:secret:rds!db-f54104e4-4744-439e-8bf4-fd426653773a-x0THR0
+  dbSecretArn: arn:aws:secretsmanager:ap-south-1:340752802275:secret:rds!db-5b2d2fd7-8031-429c-bd7f-e54716619be6-KhhQ43
   redisHost: master.cnm-dev-redis.vxwisb.aps1.cache.amazonaws.com
 irsa:
   apiRoleArn: arn:aws:iam::340752802275:role/cnm-dev-api
