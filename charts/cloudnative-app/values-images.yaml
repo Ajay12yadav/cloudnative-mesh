@@ -1,0 +1,7 @@
+# WRITTEN BY CI (.github/workflows/build-push.yml) - do not edit by hand
+api:
+  image:
+    tag: "dd4e2c4"
+frontend:
+  image:
+    tag: "dd4e2c4"
