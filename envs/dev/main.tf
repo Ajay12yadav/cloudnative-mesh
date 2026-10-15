@@ -75,12 +75,6 @@ module "redis" {
   allowed_security_group_ids = [module.eks.cluster_security_group_id]
 }
 
-# ---------------- STEP 4a: container registry ----------------
-module "ecr" {
-  source = "../../modules/ecr"
-
-  name = local.name
-}
 
 # ---------------- STEP 4b: IAM role for the API pods (IRSA) ----------------
 module "api_irsa" {

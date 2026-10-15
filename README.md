@@ -9,6 +9,7 @@
 | 4b | modules/irsa, k8s/platform, charts/ | done |
 | 5 | gitops/, scripts/up.sh, down.sh, bootstrap-argocd.sh | done |
 | 6 | k8s/monitoring, gitops/apps/monitoring*.yaml | done |
+| 7e | .github/workflows, envs/shared, modules/github-oidc | done |
 
     cd envs/dev
     terraform init -backend-config="bucket=<your-state-bucket>"
@@ -19,3 +20,12 @@
 
     bash scripts/up.sh      # rebuild everything (about 25-30 min)
     bash scripts/down.sh    # tear everything down safely
+
+## CI/CD flow
+
+    pull request  -> ci.yml          (terraform validate, helm lint, tests, image build + scan; no AWS access)
+    merge to main -> build-push.yml  (build images, push to ECR tagged with the commit SHA,
+                                      write the tag to charts/cloudnative-app/values-images.yaml)
+    Argo CD       -> sees the new tag in Git and rolls it out
+
+Permanent layer (never destroyed by down.sh): `bash scripts/shared-up.sh`  (ECR + GitHub OIDC role)

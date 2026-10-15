@@ -1,0 +1,83 @@
+name: build-and-push
+
+# After a merge to main: build both images, push them to ECR tagged with the
+# commit SHA, then write that tag into Git. Argo CD notices and deploys it.
+# CI never touches the cluster.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/build-push.yml"
+  workflow_dispatch:
+
+# One run at a time, so two merges cannot race to commit the tag file
+concurrency:
+  group: build-and-push
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # lets the job request a short-lived OIDC token for AWS
+  contents: write   # lets the job commit values-images.yaml
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_PREFIX: cnm-dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image tag (short commit SHA)
+        id: meta
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to AWS (OIDC, no stored keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push (an image that already exists is skipped)
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          for svc in api frontend; do
+            repo="${ECR_PREFIX}/${svc}"
+            if aws ecr describe-images --repository-name "$repo" --image-ids imageTag="$TAG" >/dev/null 2>&1; then
+              echo "$repo:$TAG already exists (tags are immutable) - skipping"
+              continue
+            fi
+            docker build --platform linux/amd64 -t "$REGISTRY/$repo:$TAG" "app/$svc"
+            docker push "$REGISTRY/$repo:$TAG"
+          done
+
+      - name: Write the new tag into Git (Argo CD deploys it)
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' \
+            '# WRITTEN BY CI (.github/workflows/build-push.yml) - do not edit by hand' \
+            'api:' '  image:' "    tag: \"$TAG\"" \
+            'frontend:' '  image:' "    tag: \"$TAG\"" \
+            > charts/cloudnative-app/values-images.yaml
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add charts/cloudnative-app/values-images.yaml
+          if git diff --cached --quiet; then
+            echo "Tag file already up to date."
+            exit 0
+          fi
+          git commit -m "ci: deploy images $TAG"
+          git pull --rebase origin main
+          git push origin HEAD:main

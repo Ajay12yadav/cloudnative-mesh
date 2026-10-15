@@ -21,6 +21,12 @@ variable "force_delete" {
   default     = true
 }
 
+variable "keep_last" {
+  description = "Lifecycle policy: how many images to keep per repository"
+  type        = number
+  default     = 10
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

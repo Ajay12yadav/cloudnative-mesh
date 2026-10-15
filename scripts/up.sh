@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# One command to rebuild the WHOLE platform after a teardown (about 25-30 minutes).
+# One command to rebuild the platform after a teardown (about 25 minutes).
+# Images are NOT rebuilt: they live permanently in ECR (envs/shared) and CI owns their tags.
 # Usage: bash scripts/up.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -7,7 +8,23 @@ cd "$ROOT"
 BUCKET="${STATE_BUCKET:-terraform-bucket-ajay-2026-xyz}"
 REGION="${AWS_REGION:-ap-south-1}"
 
-echo "=== 1/7 Terraform: network, RDS, Redis, EKS, ECR, IAM ==="
+echo "=== 0/7 Pre-flight checks ==="
+git pull --rebase --autostash        # CI commits image tags to GitHub: get them first
+
+IMG_FILE=charts/cloudnative-app/values-images.yaml
+if [ ! -f "$IMG_FILE" ]; then
+  echo "STOP: $IMG_FILE does not exist yet."
+  echo "      Run the CI once: GitHub -> Actions -> build-and-push -> Run workflow, then 'git pull'."
+  exit 1
+fi
+TAG="$(awk -F'"' '/tag:/{print $2; exit}' "$IMG_FILE")"
+for repo in cnm-dev/api cnm-dev/frontend; do
+  aws ecr describe-images --region "$REGION" --repository-name "$repo" --image-ids imageTag="$TAG" >/dev/null \
+    || { echo "STOP: image $repo:$TAG is not in ECR. Re-run the CI workflow."; exit 1; }
+done
+echo "Image tag $TAG exists in ECR."
+
+echo "=== 1/7 Terraform: network, RDS, Redis, EKS, IAM ==="
 ( cd envs/dev
   terraform init -backend-config="bucket=$BUCKET" -reconfigure
   terraform apply -auto-approve )
@@ -16,21 +33,21 @@ echo "=== 2/7 Connect kubectl to the new cluster ==="
 aws eks update-kubeconfig --region "$REGION" --name cnm-dev-eks
 kubectl get nodes
 
-echo "=== 3/7 Build and push images (the ECR repos are new and empty) ==="
-bash scripts/build-push.sh v1
-
-echo "=== 4/7 Make gp3 the only default StorageClass ==="
+echo "=== 3/7 Make gp3 the only default StorageClass ==="
 kubectl patch storageclass gp2 -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}' || true
 
-echo "=== 5/7 Regenerate values (new secret ARN / endpoints) and push to Git ==="
-bash scripts/gen-values.sh v1
+echo "=== 4/7 Regenerate values (new secret ARN / endpoints) and push to Git ==="
+bash scripts/gen-values.sh
 bash scripts/set-repo-url.sh
 git add charts/cloudnative-app/values-dev.yaml gitops
 git diff --cached --quiet || git commit -m "Rebuild: refresh values-dev.yaml"
+git pull --rebase --autostash
 git push
 
-echo "=== 6/7 Grafana admin secret, then install Argo CD and hand over to Git ==="
+echo "=== 5/7 Grafana admin secret ==="
 bash scripts/monitoring-secrets.sh
+
+echo "=== 6/7 Install Argo CD and hand over to Git ==="
 bash scripts/bootstrap-argocd.sh
 
 echo "=== 7/7 Wait for the load balancer and set the Ingress host ==="

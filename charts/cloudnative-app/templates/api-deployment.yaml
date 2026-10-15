@@ -20,7 +20,7 @@ spec:
       serviceAccountName: api
       containers:
         - name: api
-          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          image: "{{ .Values.api.image.repository }}:{{ required "api.image.tag is required (CI writes it into values-images.yaml)" .Values.api.image.tag }}"
           ports:
             - name: http
               containerPort: {{ .Values.api.port }}

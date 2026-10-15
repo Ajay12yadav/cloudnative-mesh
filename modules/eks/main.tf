@@ -89,7 +89,7 @@ resource "aws_iam_role" "node" {
 resource "aws_iam_role_policy_attachment" "node" {
   for_each = toset([
     "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",          # join the cluster
-    "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",                # manage pod IPs/ENIs
+    "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",               # manage pod IPs/ENIs
     "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly", # pull images from ECR
     "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",       # shell access without SSH
   ])

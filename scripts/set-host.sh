@@ -31,6 +31,7 @@ YAML
 git add charts/cloudnative-app/values-host.yaml
 if ! git diff --cached --quiet; then
   git commit -m "Set ingress host to the NLB hostname"
+  git pull --rebase --autostash
   git push
 fi
 

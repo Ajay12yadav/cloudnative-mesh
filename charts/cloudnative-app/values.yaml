@@ -5,7 +5,7 @@ api:
   replicaCount: 2
   image:
     repository: ""
-    tag: v1
+    tag: ""          # written by CI into values-images.yaml
   port: 8000
   resources:
     requests: { cpu: 100m, memory: 128Mi }
@@ -15,7 +15,7 @@ frontend:
   replicaCount: 2
   image:
     repository: ""
-    tag: v1
+    tag: ""          # written by CI into values-images.yaml
   port: 8080
   resources:
     requests: { cpu: 25m, memory: 32Mi }

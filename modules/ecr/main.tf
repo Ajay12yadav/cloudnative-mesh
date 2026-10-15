@@ -20,7 +20,7 @@ resource "aws_ecr_repository" "this" {
   tags = merge(var.tags, { Project = "CloudNative-Mesh", ManagedBy = "Terraform" })
 }
 
-# Registries grow forever and storage costs money: keep only the newest 10 images.
+# Registries grow forever and storage costs money: keep only the newest images.
 resource "aws_ecr_lifecycle_policy" "this" {
   for_each   = aws_ecr_repository.this
   repository = each.value.name
@@ -28,11 +28,11 @@ resource "aws_ecr_lifecycle_policy" "this" {
   policy = jsonencode({
     rules = [{
       rulePriority = 1
-      description  = "Keep the last 10 images"
+      description  = "Keep the newest ${var.keep_last} images"
       selection = {
         tagStatus   = "any"
         countType   = "imageCountMoreThan"
-        countNumber = 10
+        countNumber = var.keep_last
       }
       action = { type = "expire" }
     }]
