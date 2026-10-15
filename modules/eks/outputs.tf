@@ -23,3 +23,8 @@ output "oidc_provider_url" {
 output "node_role_arn" {
   value = aws_iam_role.node.arn
 }
+
+output "cluster_ca_data" {
+  description = "Base64 CA certificate of the Kubernetes API (used by the helm/kubernetes providers)"
+  value       = aws_eks_cluster.this.certificate_authority[0].data
+}

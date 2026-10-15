@@ -26,7 +26,7 @@ jobs:
       - name: Validate every root module
         run: |
           set -e
-          for dir in bootstrap envs/shared envs/dev; do
+          for dir in bootstrap envs/shared envs/platform envs/dev; do
             echo "::group::validate $dir"
             terraform -chdir="$dir" init -backend=false -input=false
             terraform -chdir="$dir" validate

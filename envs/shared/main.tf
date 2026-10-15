@@ -29,7 +29,7 @@ provider "aws" {
 module "ecr" {
   source = "../../modules/ecr"
 
-  name                 = "cnm-dev"   # keeps the repository names cnm-dev/api and cnm-dev/frontend
+  name                 = "cnm-dev" # keeps the repository names cnm-dev/api and cnm-dev/frontend
   image_tag_mutability = "IMMUTABLE" # a tag (the Git commit SHA) can never be overwritten
   force_delete         = false       # refuse to delete a repository that still holds images
   keep_last            = 30
@@ -43,4 +43,58 @@ module "github_oidc" {
   branch               = var.github_branch
   ecr_repository_arns  = values(module.ecr.repository_arns)
   create_oidc_provider = var.create_oidc_provider
+}
+
+############################################################
+# COST GUARDRAILS (7c): email alerts before a forgotten cluster hurts
+# Budget data lags real usage by several hours, so treat these as a safety net,
+# not a real-time meter. The real protection is running scripts/down.sh.
+############################################################
+resource "aws_budgets_budget" "monthly" {
+  name         = "cnm-monthly-cost"
+  budget_type  = "COST"
+  limit_amount = tostring(var.monthly_budget_usd)
+  limit_unit   = "USD"
+  time_unit    = "MONTHLY"
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 50
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.alert_email]
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 80
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.alert_email]
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "FORECASTED" # warns BEFORE you actually overspend
+    subscriber_email_addresses = [var.alert_email]
+  }
+}
+
+# A daily budget catches "I forgot to destroy the cluster" within a day or so
+resource "aws_budgets_budget" "daily" {
+  name         = "cnm-daily-cost"
+  budget_type  = "COST"
+  limit_amount = tostring(var.daily_budget_usd)
+  limit_unit   = "USD"
+  time_unit    = "DAILY"
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.alert_email]
+  }
 }

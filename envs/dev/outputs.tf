@@ -15,6 +15,7 @@ output "redis_primary_endpoint" { value = module.redis.primary_endpoint }
 # ----- Step 3 -----
 output "eks_cluster_name" { value = module.eks.cluster_name }
 output "eks_cluster_endpoint" { value = module.eks.cluster_endpoint }
+output "eks_cluster_ca_data" { value = module.eks.cluster_ca_data }
 output "eks_cluster_security_group_id" { value = module.eks.cluster_security_group_id }
 output "eks_oidc_provider_arn" { value = module.eks.oidc_provider_arn }
 output "kubeconfig_command" {

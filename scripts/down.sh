@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Safe teardown: remove what KUBERNETES created (load balancer, volumes) BEFORE terraform destroy.
+# Safe teardown. Destroys the platform layer first (its cleanup removes the load
+# balancer and EBS volumes that Kubernetes created), then the infrastructure.
+# The shared layer (ECR, OIDC role, budgets) and the state bucket are kept.
 # Usage: bash scripts/down.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -7,36 +9,18 @@ cd "$ROOT"
 BUCKET="${STATE_BUCKET:-terraform-bucket-ajay-2026-xyz}"
 REGION="${AWS_REGION:-ap-south-1}"
 
-CTX="$(kubectl config current-context)"
-case "$CTX" in
-  *cnm-dev-eks*) ;;
-  *) echo "STOP: kubectl context is '$CTX', not the EKS cluster."; exit 1 ;;
-esac
+echo "=== 1/2 Platform layer ==="
+cd "$ROOT/envs/platform"
+terraform init -backend-config="bucket=$BUCKET" -reconfigure
+if aws eks describe-cluster --region "$REGION" --name cnm-dev-eks >/dev/null 2>&1; then
+  terraform destroy -auto-approve
+else
+  echo "Cluster no longer exists: dropping the platform state without calling Kubernetes."
+  terraform state list | grep -v '^data\.' | xargs -r -n1 terraform state rm || true
+fi
 
-VPC_ID="$(cd envs/dev && terraform output -raw vpc_id)"
-
-echo ">> Deleting Argo CD applications (cascades to pods, services, and the AWS load balancer)"
-kubectl delete applications --all -n argocd --wait=true --timeout=600s || true
-
-echo ">> Deleting volume claims (Prometheus, Grafana) and waiting for the EBS volumes to be released"
-kubectl delete pvc --all -A --wait=true --timeout=300s || true
-for i in $(seq 1 30); do
-  [ -z "$(kubectl get pv -o name 2>/dev/null)" ] && break
-  echo "   waiting for persistent volumes to be deleted ($i/30)..."; sleep 10
-done
-
-echo ">> Waiting for Kubernetes-created load balancers in the VPC to disappear"
-for i in $(seq 1 30); do
-  LBS="$(aws elbv2 describe-load-balancers --region "$REGION" \
-        --query "LoadBalancers[?VpcId=='$VPC_ID'].LoadBalancerArn" --output text 2>/dev/null || true)"
-  [ -z "$LBS" ] && break
-  echo "   still deleting ($i/30)..."; sleep 10
-done
-
-helm uninstall argocd -n argocd || true
-
-echo ">> Terraform destroy"
-cd envs/dev
+echo "=== 2/2 Infrastructure layer ==="
+cd "$ROOT/envs/dev"
 terraform init -backend-config="bucket=$BUCKET" -reconfigure
 terraform destroy -auto-approve
 
