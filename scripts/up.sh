@@ -51,4 +51,8 @@ echo "=== 5/6 Terraform (envs/platform): Argo CD, Grafana secret, root app ==="
   terraform apply -auto-approve )
 
 echo "=== 6/6 Wait for the load balancer and set the Ingress host ==="
-bash scripts/set-host.sh
+if [ "${SKIP_HOST:-0}" = "1" ]; then
+  echo "SKIP_HOST=1: skipping the load balancer wait (use: kubectl port-forward to reach the app)."
+else
+  bash scripts/set-host.sh
+fi
