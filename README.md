@@ -43,3 +43,4 @@ Permanent layer (never destroyed by down.sh): `bash scripts/shared-up.sh`  (ECR 
 
     bash scripts/up.sh      # dev -> values -> platform
     bash scripts/down.sh    # platform (cleans LB/EBS) -> dev
+
