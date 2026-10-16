@@ -7,7 +7,7 @@ frontend:
     repository: 340752802275.dkr.ecr.ap-south-1.amazonaws.com/cnm-dev/frontend
 data:
   dbHost: cnm-dev-postgres.c7ikm2c4um3q.ap-south-1.rds.amazonaws.com
-  dbSecretArn: arn:aws:secretsmanager:ap-south-1:340752802275:secret:rds!db-5b2d2fd7-8031-429c-bd7f-e54716619be6-KhhQ43
+  dbSecretArn: arn:aws:secretsmanager:ap-south-1:340752802275:secret:rds!db-aa133a58-46c7-4acd-a2bf-39521b613e40-VxWIhX
   redisHost: master.cnm-dev-redis.vxwisb.aps1.cache.amazonaws.com
 irsa:
   apiRoleArn: arn:aws:iam::340752802275:role/cnm-dev-api
